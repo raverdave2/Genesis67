@@ -1,0 +1,766 @@
+
+// Project: genesis67 
+// Created: 2015-10-22
+// set window properties
+SetWindowTitle( "genesis67" )
+SetWindowSize( 1024,683, 1 )
+// set display properties
+SetVirtualResolution( 1024, 683 )
+SetOrientationAllowed( 1, 1, 1, 1 )
+#include "keys.agc" 
+#constant maxsprites=5000 
+type TMouse
+     x1#
+     y1#
+     x2#
+     y2#
+     x3
+     y3
+ endtype
+type mysprites
+	xp# as float
+	yp# as float
+	sizex# as float
+	sizey# as float
+	scalex as integer
+	scaley as integer
+	restitution# as float
+	friction# as float
+	spritenumber as integer
+	imagenumber as integer
+	transparency as integer
+	visibility as integer
+	groupnumber as integer
+	physicstype as integer
+	shape as integer
+	angle as integer
+	depth as integer
+	host as integer
+	client as integer
+	tilevalue as integer
+	canrotate as integer
+	red as integer
+	green as integer
+	blue as integer
+	selected as integer
+	framestart as integer
+	frameamount as integer
+	frameend as integer
+	loopframe   as integer
+	texturerep as integer
+	alpha as integer
+endtype
+Global		level			=	1
+Global		texturerep		=	1
+Global		Quit			=	0
+Global		CursorX#		=	0.0
+Global		CursorY#		=	0.0
+Global		CursorSprite	=	6000
+Global		CurrentImage	=	1
+Global		SpriteNumber	=	0
+global		Sizex#			=	32
+global		Sizey#			=	32
+global		scalex			=	1
+global		scaley			=	1
+global		canrotate		=	0
+global		red				=	255
+global 		green			=	255
+global 		blue			=	255
+global 		tilevalue		=	0
+global 		depth			=	50
+global 		friction#		=	0
+global 		restitution#	=	0
+global 		gridx			=	32
+global 		gridy			=	32
+global 		angle			=	0
+global 		visibility		=	1
+global 		groupnumber		=	0
+global 		transparency	=	0
+global 		shape			=	2
+global 		physicstype		=	1
+global		alpha			=	255
+global		hide=0
+global scrollx#=1000
+global scrolly#=1000
+global baseboxX#=140
+global baseboxY#=30
+global ygap#=26
+global diff#=138
+
+global 		Mouse as TMouse
+dim			mysprite[maxsprites] as mysprites
+dim			deleted[maxsprites]
+load_images()
+init()
+Repeat
+	time$=GetCurrentTime()
+	SetTextString(100,time$)
+    control()
+	r=GetVirtualButtonPressed(2)
+	if r>0 or getrawkeyreleased(KEY_Q)
+		Quit=1
+	endif
+	FillMouse(gridx,gridy)
+	setspritepositionbyoffset(CursorSprite,Mouse.x3,Mouse.y3)
+	setviewoffset(scrollx#,scrolly#)
+    Sync()
+Until Quit=1
+function init()
+	AddVirtualJoystick(1,30,470,64)
+	createsprite(500,27)
+	setspritesize(500,1024,188)
+	setspriteoffset(500,0,0)
+	setspritepositionbyoffset(500,0,0)
+	setspritedepth(500,0)
+	FixSpriteToScreen(500,1)
+	createsprite(CursorSprite,CurrentImage)
+	SetSpriteSize(CursorSprite,Sizex#,Sizey#)
+	SetSpriteDepth (cursorsprite, 200 )
+	createmyeditbox(1,baseboxX#,baseboxY#,2,255,0,0,30,26,16,255,"2.0")
+	createmyeditbox(2,baseboxX#,baseboxY#+ygap#,2,255,0,0,30,26,16,255,"1"): // Texturerep
+	createmyeditbox(3,baseboxX#,baseboxY#+ygap#*2,2,255,0,0,30,26,16,255,"32"): // GridX
+	createmyeditbox(4,baseboxX#,baseboxY#+ygap#*3,2,255,0,0,30,26,16,255,"32"): // GridY
+	createmyeditbox(5,baseboxX#,baseboxY#+ygap#*4,2,255,0,0,30,26,16,255,"1"): // ScaleX
+	createmyeditbox(6,baseboxX#,baseboxY#+ygap#*5,2,255,0,0,30,26,16,255,"1"): // ScaleY
+	//
+	createmyeditbox(7,baseboxX#*2.3,baseboxY#,2,255,0,0,30,26,16,255,"0") : // Angle
+	createmyeditbox(8,baseboxX#*2.3,baseboxY#+ygap#,2,255,0,0,30,26,16,255,""+str(CurrentImage)): // CurrentImage  
+	createmyeditbox(9,baseboxX#*2.3,baseboxY#+ygap#*2,2,255,0,0,30,26,16,255,"0")
+	createmyeditbox(10,baseboxX#*2.3,baseboxY#+ygap#*3,2,255,0,0,30,26,16,255,"255") // red
+	createmyeditbox(11,baseboxX#*2.3,baseboxY#+ygap#*4,2,255,0,0,30,26,16,255,"255") // green
+	createmyeditbox(12,baseboxX#*2.3,baseboxY#+ygap#*5,2,255,0,0,30,26,16,255,"255") // blue
+	//
+	createmyeditbox(13,baseboxX#*3.6,baseboxY#,2,255,0,0,30,26,16,255,"32") // sizeX#
+	createmyeditbox(14,baseboxX#*3.6,baseboxY#+ygap#,2,255,0,0,30,26,16,255,"32") // sizeY#
+	createmyeditbox(15,baseboxX#*3.6,baseboxY#+ygap#*2,2,255,0,0,30,26,16,255,""+str(level))
+	createmyeditbox(17,baseboxX#*3.6,baseboxY#+ygap#*3,2,255,0,0,30,26,16,255,"0") // transparency
+	createmyeditbox(18,baseboxX#*3.6,baseboxY#+ygap#*4,2,255,0,0,30,26,16,255,"2") // shape
+	createmyeditbox(19,baseboxX#*3.6,baseboxY#+ygap#*5,2,255,0,0,30,26,16,255,"1") // physicstype
+	//
+	createmyeditbox(20,baseboxX#*5.1,baseboxY#,2,255,0,0,30,26,16,255,"0") // tilevalue
+	createmyeditbox(21,baseboxX#*5.1,baseboxY#+ygap#,2,255,0,0,30,26,16,255,""+str(depth)) //depth
+	createmyeditbox(22,baseboxX#*5.1,baseboxY#+ygap#*2,2,255,0,0,30,26,16,255,"255") //alpha
+	createmyeditbox(23,baseboxX#*5.1,baseboxY#+ygap#*3,2,255,0,0,30,26,16,255,"0") //friction#
+	createmyeditbox(24,baseboxX#*5.1,baseboxY#+ygap#*4,2,255,0,0,30,26,16,255,"0") //canrotate
+	createmyeditbox(25,baseboxX#*5.1,baseboxY#+ygap#*5,2,255,0,0,30,26,16,255,"0") //restitution#
+	//***************************************************************************************
+	createmytext(1,baseboxX#-diff#,baseboxY#-6,25,255,0,0,"poop",0)
+	createmytext(2,baseboxX#-diff#,baseboxY#-6+ygap#,25,255,0,0,"Repeat",0)
+	createmytext(3,baseboxX#-diff#,baseboxY#-6+ygap#*2,25,255,0,0,"GridX",0)
+	createmytext(4,baseboxX#-diff#,baseboxY#-6+ygap#*3,25,255,0,0,"GridY",0)
+	createmytext(5,baseboxX#-diff#,baseboxY#-6+ygap#*4,25,255,0,0,"ScaleX",0)
+	createmytext(6,baseboxX#-diff#,baseboxY#-6+ygap#*5,25,255,0,0,"ScaleY",0)
+	//
+	createmytext(7,baseboxX#*2.4-diff#,baseboxy#-6,25,255,0,0,"Angle",0)
+	createmytext(8,baseboxX#*2.4-diff#,baseboxY#-6+ygap#,25,255,0,0,"Image",0)
+	createmytext(9,baseboxX#*2.4-diff#,baseboxY#-6+ygap#*2,25,255,0,0,"Group",0)
+	createmytext(10,baseboxX#*2.4-diff#,baseboxY#-6+ygap#*3,25,255,0,0,"Red",0)
+	createmytext(11,baseboxX#*2.4-diff#,baseboxY#-6+ygap#*4,25,255,0,0,"Green",0)
+	createmytext(12,baseboxX#*2.4-diff#,baseboxY#-6+ygap#*5,25,255,0,0,"Blue",0)
+	//
+	createmytext(13,baseboxX#*3.7-diff#,baseboxY#-6,25,255,0,0,"SizeX#",0)
+	createmytext(14,baseboxX#*3.7-diff#,baseboxY#-6+ygap#,25,255,0,0,"SizeY#",0)
+	createmytext(15,baseboxX#*3.7-diff#,baseboxY#-6+ygap#*2,25,255,0,0,"Level",0)
+	createmytext(17,baseboxX#*3.7-diff#,baseboxY#-6+ygap#*3,25,255,0,0,"Transp",0)
+	createmytext(18,baseboxX#*3.7-diff#,baseboxY#-6+ygap#*4,25,255,0,0,"Shape",0)
+	createmytext(19,baseboxX#*3.7-diff#,baseboxY#-6+ygap#*5,25,255,0,0,"Phyics",0)
+	createmytext(20,baseboxX#*5.0-diff#,baseboxY#-6,25,255,0,0,"Value",0)
+	createmytext(21,baseboxX#*5.0-diff#,baseboxY#-6+ygap#,25,255,0,0,"Depth",0)
+	createmytext(22,baseboxX#*5.0-diff#,baseboxY#-6+ygap#*2,25,255,0,0,"Alpha",0)
+	createmytext(23,baseboxX#*5.0-diff#,baseboxY#-6+ygap#*3,25,255,0,0,"Frict#",0)
+	createmytext(24,baseboxX#*5.0-diff#,baseboxY#-6+ygap#*4,25,255,0,0,"Canrot",0)
+	createmytext(25,baseboxX#*5.0-diff#,baseboxY#-7+ygap#*5,25,255,0,0,"Rest#",0)
+	time$=GetCurrentTime()
+	createmytext(100,2,1,25,200,255,255,""+time$,0)
+endfunction
+function control()
+	If GetPointerreleased()
+		for n=1 to maxsprites
+			if deleted[n]<>0
+				myfoundsprite=n
+				found=1
+				exit
+			endif
+		next
+		if found=1
+			found=0
+			deleted[myfoundsprite]=0
+			createsprite(myfoundsprite,CurrentImage)
+			setspritecolor(myfoundsprite,red,green,blue,255)
+			SetObjectTransparency(myfoundsprite,transparency)
+			SetSpriteSize(myfoundsprite,Sizex#,Sizey#)
+			setspriteshape(myfoundsprite,shape)
+			SetSpriteScaleByOffset(myfoundsprite,scalex,scaley)
+			setspritepositionbyoffset(myfoundsprite,Mouse.x3,Mouse.y3)
+			setspritedepth(myfoundsprite,depth)
+			SetSpriteAngle(myfoundsprite,angle)
+			setvalues(myfoundsprite)
+		else
+			Inc Spritenumber
+			createsprite(Spritenumber,CurrentImage)
+			setspritecolor(Spritenumber,red,green,blue,255)
+			SetObjectTransparency(Spritenumber,transparency)
+			SetSpriteSize(Spritenumber,Sizex#,Sizey#)
+			setspriteshape(Spritenumber,shape)
+			SetSpriteScaleByOffset(spritenumber,scalex,scaley)
+			setspritepositionbyoffset(Spritenumber,Mouse.x3,Mouse.y3)
+			setspritedepth(Spritenumber,depth)
+			SetSpriteAngle(Spritenumber,angle)
+			setvalues(Spritenumber)
+		endif
+	endif
+	if getrawkeypressed(KEY_F1)
+		load_level(level)
+		my_system_message(200,10,200,20,255,0,0,255,0,"Level Loaded!")
+	endif	
+	if getrawkeypressed(KEY_F2)
+		save_level(level)
+		my_system_message(200,10,200,20,255,0,0,255,0,"Level Saved!")
+	endif
+	m=GetRawMouseRightPressed()
+	if m>0
+		sprite = GetSpriteHit ( mouse.x2#, mouse.y2#)
+		if sprite<>cursorsprite
+			if mysprite[sprite].selected=0
+				setspritecolor(sprite,255,0,0,100)
+				mysprite[sprite].selected=1
+				elseif mysprite[sprite].selected=1
+					setspritecolor(sprite,mysprite[sprite].red,mysprite[sprite].blue,mysprite[sprite].green,255)
+					mysprite[sprite].selected=0
+			endif
+		endif
+	endif
+	if getrawkeypressed(KEY_DELETE)
+		for n=1 to maxsprites
+			if mysprite[n].selected = 1
+				deletesprite(n)
+				mysprite[n].selected=0
+				deleted[n]=1
+				reset_value(n)
+			endif
+		next n
+	endif
+	jx#=GetVirtualJoystickX(1)
+	jy#=GetVirtualJoystickY(1)
+	if jx#<0
+		scrollx#=scrollx#-6
+	endif
+	if jx#>0
+		scrollx#=scrollx#+6
+	endif
+	if jy#<0
+		scrolly#=scrolly#-6
+	endif
+	if jy#>0
+		scrolly#=scrolly#+6
+	endif
+	if getrawkeypressed(KEY_F8)
+		clear()
+	endif
+	if getrawkeyreleased(KEY_H)
+		inc hide
+		if hide>1
+			hide=0
+		endif
+		select hide
+			case 0
+				show_all()
+			endcase
+			case 1
+				hide_all()
+			endcase
+		endselect
+	endif
+	if getrawkeypressed(KEY_Z)
+		dec CurrentImage
+		setspriteimage(cursorsprite,CurrentImage)
+		checkrepeat(cursorsprite,texturerep)
+	endif
+	if getrawkeypressed(KEY_X)
+		inc CurrentImage
+		setspriteimage(cursorsprite,CurrentImage)
+		checkrepeat(cursorsprite,texturerep)
+	endif
+	If getrawkeypressed(KEY_RIGHT)
+		scalex=scalex+1
+		seteditboxtext(5,str(scalex))
+		setspritescalebyoffset(cursorsprite,scalex,scaley)
+		checkrepeat(cursorsprite,texturerep)
+	endif
+	if GetRawKeyPressed(KEY_LEFT) and scalex>1
+		dec scalex
+		seteditboxtext(5,str(scalex))
+		setspritescalebyoffset(cursorsprite,scalex,scaley)
+		checkrepeat(cursorsprite,texturerep)
+	endif
+	if GetRawKeyPressed(KEY_DOWN)
+		inc scaley
+		seteditboxtext(6,str(scaley))
+		SetSpriteScaleByOffset(cursorsprite,scalex,scaley)
+		checkrepeat(cursorsprite,texturerep)
+	endif
+	if GetRawKeyPressed(KEY_UP) and scaley>1
+		dec scaley
+		seteditboxtext(6,str(scaley))
+		SetSpriteScaleByOffset(cursorsprite,scalex,scaley)
+		checkrepeat(cursorsprite,texturerep)
+	endif
+		
+	read_boxes()
+endfunction
+function createmyeditbox(number,x#,y#,bordersize#,r,g,b,backcolor,bsizex#,bsizey#,alpha,box$)
+	createeditbox(number)
+	SetEditBoxBorderSize(number,bordersize#)
+	SetEditBoxTextColor(number,r,g,b)
+	SetEditBoxBorderColor(number,r,g,b,alpha)
+	SetEditBoxBackgroundColor( number, 0, 0, 0, alpha )
+	seteditboxsize(number,bsizex#,bsizey#)
+	SetEditBoxPosition(number,x#,y#)
+	FixEditBoxToScreen(number,1)
+	seteditboxdepth(number,0)
+	SetEditBoxText(number,box$)
+endfunction
+function createmytext(number,x#,y#,size,r,g,b,mystring$,depth)
+	createtext(number,mystring$)
+	settextsize(number,size)
+	settextcolor(number,r,b,g,255)
+	SetTextPosition(number,x#,y#)
+	FixTextToScreen(number,1)
+	settextdepth(number,depth)
+endfunction
+function make_my_button(index,x,y,size,text$,br,bg,bb,al)
+	AddVirtualButton( index, x, y, size )
+	setvirtualbuttontext(index,text$)
+	SetVirtualButtonColor(index,br,bg,bb)
+	SetVirtualButtonAlpha(index,al)
+	SetVirtualButtonVisible(index,1)
+endfunction
+function load_images()
+	for n=1 to 1000
+		f$=str(n) + ".png"
+		if getfileexists(f$)
+			loadimage (n,f$)
+				`SetImageWrapU(n,1)
+			`SetImageWrapV(n,1)
+		endif
+	next
+endfunction
+function hide_all()
+	for n=1 to 100
+		if GetEditBoxExists(n)
+			SetEditBoxVisible(n,0)
+		endif
+		if gettextexists(n)
+			settextvisible(n,0)
+		endif
+		if GetVirtualButtonExists(n)
+			SetVirtualButtonVisible(n,0)
+		endif
+	next n
+	SetSpriteVisible(500,0)
+endfunction
+function show_all()
+	for n=1 to 100
+		if GetEditBoxExists(n)
+			SetEditBoxVisible(n,1)
+		endif
+		if gettextexists(n)
+			settextvisible(n,1)
+		endif
+		if GetVirtualButtonExists(n)
+			SetVirtualButtonVisible(n,1)
+		endif
+	next n
+	setspritevisible(500,1)
+endfunction
+function read_boxes()
+	if getrawkeypressed(KEY_ENTER)
+		focus=GetCurrentEditBox()
+		select focus
+			case 2
+				t$=GetEditBoxText(2)
+
+				texturerep=val(t$)
+				checkrepeat(cursorsprite,texturerep)
+			endcase
+			case 3
+				t$=GetEditBoxText(3)
+				t=val(t$)
+				gridx=t
+			endcase
+			case 4
+				t$=GetEditBoxText(4)
+				t=val(t$)
+				gridy=t
+			endcase
+			case 5
+				t$=GetEditBoxText(5)
+				t=val(t$)
+				scalex=t
+				SetSpriteScaleByOffset(CursorSprite,scalex,scaley)
+				checkrepeat(cursorsprite,texturerep)
+			endcase
+			case 6
+				t$=GetEditBoxText(6)
+				t=val(t$)
+				scaley=t
+				SetSpriteScaleByOffset(CursorSprite,scalex,scaley)
+				checkrepeat(cursorsprite,texturerep)
+			endcase
+			case 7
+				t$=GetEditBoxText(7)
+				t=val(t$)
+				angle=t
+				setspriteangle(cursorsprite,angle)
+			endcase
+			case 8
+				t$=GetEditBoxText(8)
+				t=val(t$)
+				CurrentImage=t
+				setspriteimage(cursorsprite,CurrentImage)				
+			endcase
+			case 9
+				t$=GetEditBoxText(9)
+				t=val(t$)
+				groupnumber=t
+			endcase	
+			case 10
+				t$=GetEditBoxText(10)
+				t=val(t$)
+				red=t
+				setspritecolor(cursorsprite,red,green,blue,255)
+			endcase
+			case 11
+				t$=GetEditBoxText(11)
+				t=val(t$)
+				green=t
+				setspritecolor(cursorsprite,red,green,blue,255)
+			endcase
+			case 12
+				t$=GetEditBoxText(12)
+				t=val(t$)
+				blue=t
+				setspritecolor(cursorsprite,red,green,blue,255)
+			endcase
+			case 13
+				t$=GetEditBoxText(13)
+				t#=valfloat(t$)
+				sizex#=t#
+				setspritesize(cursorsprite,sizex#,sizey#)
+			endcase
+			case 14
+				t$=GetEditBoxText(14)
+				t#=valfloat(t$)
+				sizey#=t#
+				setspritesize(cursorsprite,sizex#,sizey#)
+			endcase
+			case 15
+				t$=GetEditBoxText(15)
+				t=val(t$)
+				level=t	
+			endcase
+			case 17
+				t$=GetEditBoxText(17)
+				t=val(t$)
+				transparency=t
+				SetSpriteTransparency(cursorsprite,transparency)
+			endcase	
+			case 18
+				t$=GetEditBoxText(18)
+				t=val(t$)
+				shape=t
+			endcase	
+			case 19
+				t$=GetEditBoxText(19)
+				t=val(t$)
+				physicstype=t
+			endcase	
+			case 20
+				t$=GetEditBoxText(20)
+				t=val(t$)
+				tilevalue=t
+			endcase	
+			case 21
+				t$=GetEditBoxText(21)
+				t=val(t$)
+				depth=t
+			endcase
+			case 22
+				t$=geteditboxtext(22)
+				t=val(t$)
+				alpha=t
+			endcase	
+			case 23
+				t$=geteditboxtext(23)
+				t#=valfloat(t$)
+				friction#=t#
+			endcase
+			case 24
+				t$=geteditboxtext(24)
+				t=val(t$)
+				canrotate=t
+			endcase
+			case 25
+				t$=geteditboxtext(25)
+				t#=valfloat(t$)
+				restitution#=t#	
+			endcase		
+		endselect
+	endif
+endfunction
+function FillMouse(gridx,gridy)
+     Mouse.x1#=getpointerx()
+     Mouse.y1#=getpointery()
+     Mouse.x2#=screentoworldx(Mouse.x1#)
+     Mouse.y2#=screentoworldy(Mouse.y1#)
+     Mouse.x3=floor(Mouse.x2#/gridx)*gridx
+     Mouse.y3=floor(Mouse.y2#/gridy)*gridy
+ endfunction
+function setvalues(spr)
+	mysprite[spr].spritenumber=spr
+	mysprite[spr].angle=angle
+	mysprite[spr].canrotate=canrotate
+	mysprite[spr].blue=blue
+	mysprite[spr].red=red
+	mysprite[spr].green=green
+	mysprite[spr].sizex#=sizex#
+	mysprite[spr].sizey#=sizey#
+	mysprite[spr].scalex=scalex
+	mysprite[spr].scaley=scaley
+	mysprite[spr].groupnumber=groupnumber
+	mysprite[spr].xp#=Mouse.x3
+	mysprite[spr].yp#=Mouse.y3
+	mysprite[spr].texturerep=texturerep
+	mysprite[spr].depth=depth
+	mysprite[spr].friction#=friction#
+	mysprite[spr].restitution#=restitution#
+	mysprite[spr].canrotate=canrotate
+	mysprite[spr].shape=shape
+	mysprite[spr].physicstype=physicstype
+	mysprite[spr].visibility=visibility
+	mysprite[spr].transparency=transparency
+	mysprite[spr].imagenumber=CurrentImage
+	mysprite[spr].tilevalue=tilevalue
+	mysprite[spr].alpha=alpha
+	select texturerep
+		case 1
+			SetImageWrapU(GetSpriteImageID(spr),1)
+			SetImageWrapV(GetSpriteImageID(spr),1)
+			SetSpriteUVScale(spr,1.0/(scalex),1.0/(scaley))
+			`sync()
+		endcase
+		case 0
+			SetImageWrapU(GetSpriteImageID(spr),0)
+			SetImageWrapV(GetSpriteImageID(spr),0)
+			SetSpriteUVScale(spr,1.0,1.0)
+			`sync()
+		endcase
+	endselect
+endfunction
+function save_level(level)
+	f$=""
+	f$="level"
+	f$=f$+str(level)
+	f$=f$+".lev"
+	myfile=opentowrite(f$,0)
+	for n=1 to maxsprites
+		writefloat(myfile,mysprite[n].xp#)
+		writefloat(myfile,mysprite[n].yp#)
+		writefloat(myfile,mysprite[n].sizex#)
+		writefloat(myfile,mysprite[n].sizey#)
+		writeinteger(myfile,mysprite[n].scalex)
+		writeinteger(myfile,mysprite[n].scaley)
+		writefloat(myfile,mysprite[n].restitution#)
+		writefloat(myfile,mysprite[n].friction#)
+		writeinteger(myfile,mysprite[n].spritenumber)
+		writeinteger(myfile,mysprite[n].imagenumber)
+		writeinteger(myfile,mysprite[n].transparency)
+		writeinteger(myfile,mysprite[n].visibility)
+		writeinteger(myfile,mysprite[n].groupnumber)
+		writeinteger(myfile,mysprite[n].physicstype)
+		writeinteger(myfile,mysprite[n].shape)
+		writeinteger(myfile,mysprite[n].angle)
+		writeinteger(myfile,mysprite[n].depth)
+		writeinteger(myfile,mysprite[n].host)
+		writeinteger(myfile,mysprite[n].client)
+		writeinteger(myfile,mysprite[n].tilevalue)
+		writeinteger(myfile,mysprite[n].canrotate)
+		writeinteger(myfile,mysprite[n].red)
+		writeinteger(myfile,mysprite[n].green)
+		writeinteger(myfile,mysprite[n].blue)
+		writeinteger(myfile,mysprite[n].selected)
+		writeinteger(myfile,mysprite[n].framestart)
+		writeinteger(myfile,mysprite[n].frameamount)
+		writeinteger(myfile,mysprite[n].frameend)
+		writeinteger(myfile,mysprite[n].loopframe)
+		writeinteger(myfile,mysprite[n].texturerep)
+		writeinteger(myfile,mysprite[n].alpha)
+	next n
+	closefile(myfile)
+endfunction
+function my_system_message(textnumber,tx#,ty#,textsize#,r,g,b,alpha,depth,message$)
+	createtext(textnumber,message$)
+	settextsize(textnumber,textsize#)
+	settextcolor(textnumber,r,g,b,alpha)
+	settextposition(textnumber,tx#,ty#)
+	settextdepth(textnumber,depth)
+	settextvisible(textnumber,1)
+	FixTextToScreen(textnumber,1)
+	sync()
+	sleep(1500)
+	deletetext(textnumber)
+endfunction
+function reset_value(spr)
+	mysprite[spr].xp#=0
+	mysprite[spr].yp# =0
+	mysprite[spr].sizex# =0
+	mysprite[spr].sizey# =0
+	mysprite[spr].scalex =0
+	mysprite[spr].scaley =0
+	mysprite[spr].restitution# =0
+	mysprite[spr].friction# =0
+	mysprite[spr].spritenumber =0
+	mysprite[spr].imagenumber =0
+	mysprite[spr].transparency =0
+	mysprite[spr].visibility =0
+	mysprite[spr].groupnumber =0
+	mysprite[spr].physicstype=0
+	mysprite[spr].shape =0
+	mysprite[spr].angle =0
+	mysprite[spr].depth=0
+	mysprite[spr].host =0
+	mysprite[spr].client =0
+	mysprite[spr].tilevalue=0
+	mysprite[spr].canrotate =0
+	mysprite[spr].red =0
+	mysprite[spr].green =0
+	mysprite[spr].blue =0
+	mysprite[spr].selected =0
+	mysprite[spr].framestart =0
+	mysprite[spr].frameamount =0
+	mysprite[spr].frameend =0
+	mysprite[spr].loopframe   =0
+	mysprite[spr].texturerep=0
+	mysprite[spr].alpha=255
+endfunction
+function load_level(level)
+	f$=""
+	f$="level"
+	f$=f$+str(level)
+	f$=f$+".lev"
+	myfile=opentoread(f$)
+	if getfileexists(f$)
+		clear()
+		for n=1 to maxsprites
+			mysprite[n].xp#=readfloat(myfile)
+			mysprite[n].yp#=readfloat(myfile)
+			mysprite[n].sizex#=readfloat(myfile)
+			mysprite[n].sizey#=readfloat(myfile)
+			mysprite[n].scalex=readinteger(myfile)
+			mysprite[n].scaley=readinteger(myfile)
+			mysprite[n].restitution#=readfloat(myfile)
+			mysprite[n].friction#=readfloat(myfile)
+			mysprite[n].spritenumber=readinteger(myfile)
+			mysprite[n].imagenumber=readinteger(myfile)
+			mysprite[n].transparency=readinteger(myfile)
+			mysprite[n].visibility=readinteger(myfile)
+			mysprite[n].groupnumber=readinteger(myfile)
+			mysprite[n].physicstype=readinteger(myfile)
+			mysprite[n].shape=readinteger(myfile)
+			mysprite[n].angle=readinteger(myfile)
+			mysprite[n].depth=readinteger(myfile)
+			mysprite[n].host=readinteger(myfile)
+			mysprite[n].client=readinteger(myfile)
+			mysprite[n].tilevalue=readinteger(myfile)
+			mysprite[n].canrotate=readinteger(myfile)
+			mysprite[n].red=readinteger(myfile)
+			mysprite[n].green=readinteger(myfile)
+			mysprite[n].blue=readinteger(myfile)
+			mysprite[n].selected=readinteger(myfile)
+			mysprite[n].framestart=readinteger(myfile)
+			mysprite[n].frameamount=readinteger(myfile)
+			mysprite[n].frameend=readinteger(myfile)
+			mysprite[n].loopframe=readinteger(myfile)
+			mysprite[n].texturerep=readinteger(myfile)
+			mysprite[n].alpha=readinteger(myfile)
+			//place the sprite
+			if mysprite[n].spritenumber<>0
+				createsprite(mysprite[n].spritenumber,mysprite[n].imagenumber)
+				setspritesize(mysprite[n].spritenumber,mysprite[n].sizex#,mysprite[n].sizey#)
+				setspriteshape(mysprite[n].spritenumber,mysprite[n].shape)
+				SetSpriteScaleByOffset(mysprite[n].spritenumber,mysprite[n].scalex,mysprite[n].scaley)
+				SetSpriteAngle(mysprite[n].spritenumber,mysprite[n].angle)
+				setspritecolor(mysprite[n].spritenumber,mysprite[n].red,mysprite[n].green,mysprite[n].blue,255)
+				SetSpriteTransparency(mysprite[n].spritenumber,mysprite[n].transparency)
+				SetSpritePositionByOffset(mysprite[n].spritenumber,mysprite[n].xp#,mysprite[n].yp#)
+				setspritedepth(mysprite[n].spritenumber,mysprite[n].depth)
+				checkrepeat(mysprite[n].spritenumber,mysprite[n].texturerep)
+			endif
+		next n
+		closefile(myfile)
+		for n=1 to maxsprites
+			if mysprite[n].spritenumber<>0
+				if spritenumber<=mysprite[n].spritenumber
+					spritenumber=mysprite[n].spritenumber+1
+				endif
+			endif
+		next n
+	endif
+endfunction
+function clear()
+	for n=1 to maxsprites
+		if mysprite[n].spritenumber<>0
+			deletesprite(n)
+		endif
+		mysprite[n].xp#=0
+		mysprite[n].yp#=0
+		mysprite[n].sizex#=0
+		mysprite[n].sizey#=0
+		mysprite[n].scalex=0
+		mysprite[n].scaley=0
+		mysprite[n].restitution#=0
+		mysprite[n].friction#=0
+		mysprite[n].spritenumber=0
+		mysprite[n].imagenumber=0
+		mysprite[n].transparency=0
+		mysprite[n].visibility=0
+		mysprite[n].groupnumber=0
+		mysprite[n].physicstype=0
+		mysprite[n].shape=0
+		mysprite[n].angle=0
+		mysprite[n].depth=0
+		mysprite[n].host=0
+		mysprite[n].client=0
+		mysprite[n].tilevalue=0
+		mysprite[n].canrotate=0
+		mysprite[n].red=0
+		mysprite[n].green=0
+		mysprite[n].blue=0
+		mysprite[n].selected=0
+		mysprite[n].framestart=0
+		mysprite[n].frameamount=0
+		mysprite[n].frameend=0
+		mysprite[n].loopframe=0
+		mysprite[n].texturerep=0
+		mysprite[n].alpha=255
+		deleted[n]=0
+		spritenumber=0
+	next n
+endfunction
+function checkrepeat(Spr,mytexturerep)
+		select mytexturerep
+			case 1
+				setimagewrapu(GetSpriteImageID(Spr),1)
+				SetImageWrapV(GetSpriteImageID(Spr),1)
+				SetSpriteUVScale(Spr,1.0/scalex,1.0/scaley)
+			endcase
+			
+			case 0
+				SetImageWrapU(GetSpriteImageID(Spr),0)
+				SetImageWrapV(GetSpriteImageID(Spr),0)
+				SetSpriteUVScale(Spr,1.0,1.0)
+			endcase
+		endselect
+			
+	
+endfunction
